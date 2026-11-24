@@ -1,0 +1,1 @@
+Paquete Dart compartido: modelos, cliente Supabase y conversiones (EDA a µS, magnitud ACC, hora UTC a Lima). Responsable: Joseph. Revisa: Ariana.

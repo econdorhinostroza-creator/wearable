@@ -1,0 +1,29 @@
+# Claves y secretos
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+
+# Datos completos: cada quien los guarda en datos/local/
+datos/local/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Flutter y Dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

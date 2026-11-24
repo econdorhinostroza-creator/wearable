@@ -1,0 +1,1 @@
+Código de extracción de ventanas de los datasets (SeizeIT2, Mayo). Responsable: Elizabeth. Revisa: Joseph. Los datos completos no se suben aquí.
