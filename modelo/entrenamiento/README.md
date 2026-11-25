@@ -1,0 +1,1 @@
+Modelo exportado, versionado, con su ficha (fecha, datasets, ventanas de entrenamiento y prueba, métricas). Responsable: Joseph. Revisa: Elizabeth.
