@@ -47,7 +47,7 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - Valores: ACC −3,10 a 3,05 (media ≈ 0, sin componente continua; unidad: confirmar). EDA −0,14 a 225,2 (media 0,31; no parece EDA cruda en µS; unidad y procesamiento: confirmar). BVP −3620 a 3362 (media ≈ 0; unidad: confirmar)
 - NaN: ninguno
 - Tipo de crisis: confirmar. La página de Zenodo no dice si son tónico-clónicas
-- Correspondencia con meta.csv: ambos tienen 254744 filas; el orden se comprueba comparando la columna y del .npz con la de meta.csv (pendiente)
+- Correspondencia con meta.csv: verificada; la columna y coincide fila a fila en las 254744 ventanas
 
 ## My Seizure Gauge en Epilepsy Ecosystem (Seer)
 - Origen: https://www.epilepsyecosystem.org/my-seizure-gauge-1
