@@ -1,0 +1,1 @@
+Backend Supabase: migraciones SQL, Edge Functions y datos semilla. Responsable: Elizabeth. Revisa: Ariana. Todo cambio de la base va como migración; nunca se edita a mano.
