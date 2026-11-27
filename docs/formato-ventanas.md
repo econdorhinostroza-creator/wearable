@@ -1,4 +1,4 @@
-# Formato de las ventanas (ficha v0.3)
+# Formato de las ventanas (ficha v0.4)
 
 Responsable: Elizabeth. Consumen: Ariana (reproductor) y Joseph (modelo).
 Estado: borrador. Lo marcado "confirmar" aún no está verificado.
@@ -16,7 +16,7 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - Origen: Zenodo, DOI 10.5281/zenodo.17380899, licencia CC BY 4.0
 - Autores: B. Brinkmann (curador) y M. Nasseri (recolectora), Mayo Clinic
 - Datos originales: zips del E4 (ACC.csv, EDA.csv, BVP.csv); la fila 1 de cada csv trae la hora de inicio en UTC y la fila 2 la frecuencia
-- Archivos: carpeta ventanas_completo con ventanas.npz (1,45 GB), meta.csv y tabla_dataset.csv. Viven fuera del repositorio
+- Archivos: carpeta ventanas_completo con ventanas.npz (1,45 GB), meta.csv y tabla_dataset.csv, más intervalos_ictales.csv (las etiquetas). Viven fuera del repositorio
 - Claves del .npz: acc (254744, 320, 3) float32, en g, filtro pasa banda 0,5–15 Hz; eda (254744, 40) float32, en µS, pasabajos 1 Hz; bvp (254744, 640) float32, filtro pasa banda 0,5–8 Hz; y (254744,) int64
 - Frecuencias: ACC 32 Hz, EDA 4 Hz, BVP 64 Hz
 - Ventana: 10 s (320, 40 y 640 muestras)
@@ -27,23 +27,34 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - Columnas de meta.csv: sesion, t_ini_utc, y, id_evento, usar_acc, usar_eda, eda_cero_frac (fracción de EDA en cero)
 - Columnas de tabla_dataset.csv: sesion, duracion_h, ventanas_0, ventanas_1
 - Sesiones: el nombre es el tiempo Unix de inicio más el serial de la pulsera (A01EE3, A01EEC, A02294)
-- Paciente: no viene en el archivo. Solo la sesión
+- Paciente: no viene en el archivo. Solo la sesión. Las notas de etiquetado citan solo 1110.txt, así que casi seguro los 4 eventos son de un solo paciente (1110). Confirmar con las carpetas de las sesiones en los datos originales
 - Eventos ictales presentes: 4, en 3 sesiones
 
-| Evento | Sesión | Ventanas | Cubren | Inicio (UTC) |
-|---|---|---|---|---|
-| E01 | 1598624269_A01EE3 | 21 | 110 s | 2020-08-29 12:30:49 |
-| E09 | 1604525961_A02294 | 14 | 75 s | 2020-11-05 11:09:06 |
-| E10 | 1604525961_A02294 | 17 | 90 s | 2020-11-05 14:11:21 |
-| E12 | 1617460460_A01EEC | 17 | 90 s | 2021-04-04 12:18:15 |
+| Evento | Sesión | Duración etiquetada | Ventanas | Cubren | Inicio (UTC) | usar_acc | usar_eda |
+|---|---|---|---|---|---|---|---|
+| E01 | 1598624269_A01EE3 | 105 s | 21 | 110 s | 2020-08-29 12:30:49 | Sí | Sí |
+| E09 | 1604525961_A02294 | 72 s | 14 | 75 s | 2020-11-05 11:09:06 | Sí | Sí |
+| E10 | 1604525961_A02294 | 82 s | 17 | 90 s | 2020-11-05 14:11:21 | Sí | Sí |
+| E12 | 1617460460_A01EEC | 85 s | 17 | 90 s | 2021-04-04 12:18:15 | Sí | No |
 
-- Eventos sin ventanas ictales: E02 a E08 y E11 no aparecen. Confirmar con intervalos_ictales.csv si son zonas probable, dudosa o excluir
+- "Duración etiquetada" es la del intervalo en intervalos_ictales.csv; "Cubren" va del inicio de la primera ventana al final de la última
+- Señales utilizables: E01, E09 y E10 tienen ACC, EDA y BVP. E12 solo tiene ACC útil: su EDA está casi en cero (usar_eda = No). meta.csv no tiene columna para la BVP; revisar la BVP de E12 (confirmar)
+- Etiquetado: manual, marcado sobre las gráficas de las señales con ayuda de las notas de 1110.txt. En E09 y E10 solo se etiqueta la ráfaga sostenida inicial
+- Umbral de solape: una ventana se etiqueta ictal según cuánto se solapa con el intervalo. Con 4 s de solape no se etiqueta y con 6 s sí. El umbral exacto: confirmar en el script de extracción
+- Intervalos que no son ictales en intervalos_ictales.csv (15 intervalos en total, 4 ictales):
+
+| Clase | Eventos | Ventanas que generan |
+|---|---|---|
+| Probable | E01b, E04 | Ninguna (se descartan) |
+| Dudoso | E03, E08 | Ninguna (se descartan) |
+| Excluido | E02, E05, E06a, E06b, E07, E10p, E11 | Ninguna (se descartan) |
 - Rango de valores: ACC de −3,10 a 3,05; EDA de −0,14 a 225,2; BVP de −3620 a 3362. Revisar: el ACC supera el ±2 g habitual del E4 y la EDA máxima parece un artefacto
 - NaN: ninguno
 - Correspondencia con meta.csv: verificada; la columna y coincide fila a fila en las 254744 ventanas
 - Tipo de crisis: confirmar (la ficha del dataset no lo indica)
 - Aviso: el ACC está filtrado (sin componente continua, media cerca de 0), así que no incluye la gravedad
-- Aviso: con 4 eventos, la partición entre entrenamiento y prueba debe ser por evento o por sesión, nunca al azar. Cuántos pacientes distintos hay: confirmar
+- Aviso: con 4 eventos (solo 3 con EDA), la partición entre entrenamiento y prueba debe ser por evento o por sesión, nunca por ventana ni al azar
+- Aviso: si se confirma que hay un solo paciente, un modelo entrenado con Mayo no demuestra que generalice a otros pacientes
 
 ## SeizeIT2 (solo acelerómetro)
 - Origen: OpenNeuro ds005873 v1.1.0 (CC0)
@@ -77,6 +88,7 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 
 ## Reglas del reproductor
 - Si falta una señal, el canal queda vacío y su bit de calidad dice "no disponible". No se inventan datos.
+- Mayo: si usar_eda = No (como en E12), el canal EDA va vacío con "no disponible"; no se envía la EDA casi en cero como si fuera real. Lo mismo con usar_acc = No.
 - El convertidor deja ACC en cuentas del ADXL345 (≈3,9 mg por cuenta, a confirmar) y EDA en mV (R4 = R13 = 100 kΩ; 1 µS da 545,5 mV y 10 µS da 750 mV).
 - Las ventanas de prueba que usa la demo no deben haber sido vistas por el modelo al entrenar.
 - Los datos completos no se suben al repositorio. Solo MANIFIESTO.csv y 3 a 5 muestras pequeñas.
