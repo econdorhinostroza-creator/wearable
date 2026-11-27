@@ -1,4 +1,4 @@
-# Formato de las ventanas (ficha v0.4)
+# Formato de las ventanas (ficha v0.5)
 
 Responsable: Elizabeth. Consumen: Ariana (reproductor) y Joseph (modelo).
 Estado: borrador. Lo marcado "confirmar" aún no está verificado.
@@ -24,7 +24,8 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - Paso entre ventanas: ictales cada 5 s (solapadas al 50 %); interictales 1 de cada 12, es decir, cada 60 s (verificado en meta.csv y tabla_dataset.csv)
 - Descartadas: 120 s antes y después de cada crisis, y las zonas probable, dudosa y excluir
 - Hora real: sí. meta.csv trae t_ini_utc (tiempo Unix UTC) por ventana
-- Columnas de meta.csv: sesion, t_ini_utc, y, id_evento, usar_acc, usar_eda, eda_cero_frac (fracción de EDA en cero)
+- Columnas de meta.csv: sesion, t_ini_utc, y, id_evento, usar_acc, usar_eda, eda_cero_frac (fracción de muestras de EDA por debajo de 0,05 µS)
+- Ojo: usar_acc y usar_eda solo vienen de intervalos_ictales.csv en las ventanas ictales. En las interictales valen siempre "Sí", aunque la EDA esté en cero. Para las interictales, usar eda_cero_frac para detectar pérdida de contacto
 - Columnas de tabla_dataset.csv: sesion, duracion_h, ventanas_0, ventanas_1
 - Sesiones: el nombre es el tiempo Unix de inicio más el serial de la pulsera (A01EE3, A01EEC, A02294)
 - Paciente: no viene en el archivo. Solo la sesión. Las notas de etiquetado citan solo 1110.txt, así que casi seguro los 4 eventos son de un solo paciente (1110). Confirmar con las carpetas de las sesiones en los datos originales
@@ -40,7 +41,7 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - "Duración etiquetada" es la del intervalo en intervalos_ictales.csv; "Cubren" va del inicio de la primera ventana al final de la última
 - Señales utilizables: E01, E09 y E10 tienen ACC, EDA y BVP. E12 solo tiene ACC útil: su EDA está casi en cero (usar_eda = No). meta.csv no tiene columna para la BVP; revisar la BVP de E12 (confirmar)
 - Etiquetado: manual, marcado sobre las gráficas de las señales con ayuda de las notas de 1110.txt. En E09 y E10 solo se etiqueta la ráfaga sostenida inicial
-- Umbral de solape: una ventana se etiqueta ictal según cuánto se solapa con el intervalo. Con 4 s de solape no se etiqueta y con 6 s sí. El umbral exacto: confirmar en el script de extracción
+- Umbral de solape: una ventana es ictal si su centro cae dentro del intervalo (inicio ≤ centro ≤ fin), es decir, si se solapa al menos 5 s con él. Verificado en preprocesar_ventanas.py y en los 4 eventos (con 4 s de solape no se etiqueta y con 6 s sí)
 - Intervalos que no son ictales en intervalos_ictales.csv (15 intervalos en total, 4 ictales):
 
 | Clase | Eventos | Ventanas que generan |
@@ -48,13 +49,32 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 | Probable | E01b, E04 | Ninguna (se descartan) |
 | Dudoso | E03, E08 | Ninguna (se descartan) |
 | Excluido | E02, E05, E06a, E06b, E07, E10p, E11 | Ninguna (se descartan) |
-- Rango de valores: ACC de −3,10 a 3,05; EDA de −0,14 a 225,2; BVP de −3620 a 3362. Revisar: el ACC supera el ±2 g habitual del E4 y la EDA máxima parece un artefacto
+- Rango de valores: ACC de −3,10 a 3,05 g; EDA de −0,14 a 225,2 µS; BVP de −3620 a 3362. El ACC pasa de ±2 g porque el filtro quita la gravedad: un eje que reposa en −1 g y satura en +2 g queda en unos +3 g. El ACC crudo sí satura en ±2 g (ver los recortes). Revisar: la EDA máxima parece un artefacto
 - NaN: ninguno
 - Correspondencia con meta.csv: verificada; la columna y coincide fila a fila en las 254744 ventanas
 - Tipo de crisis: confirmar (la ficha del dataset no lo indica)
 - Aviso: el ACC está filtrado (sin componente continua, media cerca de 0), así que no incluye la gravedad
 - Aviso: con 4 eventos (solo 3 con EDA), la partición entre entrenamiento y prueba debe ser por evento o por sesión, nunca por ventana ni al azar
 - Aviso: si se confirma que hay un solo paciente, un modelo entrenado con Mayo no demuestra que generalice a otros pacientes
+
+## Mayo: recortes de crisis (−3/+15 min)
+- Script: datos/extraccion/recortar_crisis.py. Lee los zips originales del E4 e intervalos_ictales.csv; no modifica nada
+- Salida (fuera del repositorio): recortes/<id_evento>.npz y recortes/indice.csv
+- Tramo: de 180 s antes del inicio a 900 s después del fin. Con --extendida: −600/+1800 s, solo para revisión
+- Claves del .npz: acc (N, 3) int16; eda (N,) float32; bvp (N,) float32; t_inicio_acc, t_inicio_eda y t_inicio_bvp (UTC del primer dato); fs_acc = 32, fs_eda = 4, fs_bvp = 64; inicio_utc, fin_utc, ventana_desde_utc, ventana_hasta_utc, pre_s, post_s y sesion
+- Señales crudas, sin filtrar. ACC en cuentas del E4 (1 cuenta = 1/64 g; −128 y 127 son el tope de ±2 g), con la gravedad incluida. EDA en µS y BVP tal como las da el E4. Ojo: las ventanas están filtradas y el ACC va en g, así que no se mezclan sin convertir
+- Columnas de indice.csv: id_evento, sesion, inicio_utc, fin_utc, duracion_ictal_s, pre_s, post_s, usar_acc, usar_eda, porcentaje con datos de cada señal en cada tramo (acc_pre_%, acc_ictal_%, acc_post_%, igual para eda y bvp) y estado (completo, parcial, sin_datos o sin_sesion)
+- Resultado: los 4 eventos ictales completos (100 % de datos en las tres señales y los tres tramos), cada uno en la sesión que le corresponde
+
+| Evento | Muestras ACC | Muestras EDA | Muestras BVP | ACC en el tope (pre / ictal / post) |
+|---|---|---|---|---|
+| E01 | 37920 | 4740 | 75840 | 0,0 % / 3,1 % / 0,1 % |
+| E09 | 36864 | 4608 | 73728 | 0,0 % / 1,1 % / 0,1 % |
+| E10 | 37184 | 4648 | 74368 | 0,1 % / 2,2 % / 0,2 % |
+| E12 | 37280 | 4660 | 74560 | 0,0 % / 1,3 % / 0,3 % |
+
+- Tramo posterior con más actividad: el de E01 contiene E01b (probable, 12:35:48 a 12:36:53 UTC); el de E09 tiene ráfagas intermitentes que no se etiquetan; el de E10 contiene E10p (excluido, 14:12:47 a 14:16:40 UTC). El detector puede dar alarma ahí
+- E12: EDA casi en cero (máximo 1,32 µS, mediana 0,13 µS). En el reproductor va como "no disponible"
 
 ## SeizeIT2 (solo acelerómetro)
 - Origen: OpenNeuro ds005873 v1.1.0 (CC0)
@@ -94,7 +114,7 @@ Estado: borrador. Lo marcado "confirmar" aún no está verificado.
 - Los datos completos no se suben al repositorio. Solo MANIFIESTO.csv y 3 a 5 muestras pequeñas.
 
 ## Límites conocidos
-- Las ventanas no permiten recortar el contexto de −3/+15 min de cada crisis: las interictales están muestreadas (1 por minuto en Mayo). Ese recorte se hace desde los datos originales (script recortar_crisis.py, todavía en prueba).
+- Las ventanas no permiten recortar el contexto de −3/+15 min de cada crisis: las interictales están muestreadas (1 por minuto en Mayo). Ese recorte se hace desde los datos originales (ver "Mayo: recortes de crisis").
 - Las ictales de Mayo sí se pueden unir en un tramo continuo de 75 a 110 s, por su paso de 5 s.
 
 ## Citas
