@@ -1,0 +1,1 @@
+Convertidor y reproductor de ventanas: simula la pulsera hacia la app y la base de datos. Responsable: Elizabeth. Revisa: Joseph.
